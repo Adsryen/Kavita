@@ -1,9 +1,11 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using API.DTOs.SeriesDetail;
 using API.DTOs.Settings;
 using API.Entities;
 using API.Entities.Enums;
+using API.Entities.Metadata;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,6 +17,8 @@ public interface ISettingsRepository
     Task<ServerSettingDto> GetSettingsDtoAsync();
     Task<ServerSetting> GetSettingAsync(ServerSettingKey key);
     Task<IEnumerable<ServerSetting>> GetSettingsAsync();
+    void Remove(ServerSetting setting);
+    Task<ExternalSeriesMetadata?> GetExternalSeriesMetadata(int seriesId);
 }
 public class SettingsRepository : ISettingsRepository
 {
@@ -32,6 +36,18 @@ public class SettingsRepository : ISettingsRepository
         _context.Entry(settings).State = EntityState.Modified;
     }
 
+    public void Remove(ServerSetting setting)
+    {
+        _context.Remove(setting);
+    }
+
+    public async Task<ExternalSeriesMetadata?> GetExternalSeriesMetadata(int seriesId)
+    {
+        return await _context.ExternalSeriesMetadata
+            .Where(s => s.SeriesId == seriesId)
+            .FirstOrDefaultAsync();
+    }
+
     public async Task<ServerSettingDto> GetSettingsDtoAsync()
     {
         var settings = await _context.ServerSetting
@@ -43,7 +59,7 @@ public class SettingsRepository : ISettingsRepository
 
     public Task<ServerSetting> GetSettingAsync(ServerSettingKey key)
     {
-        return _context.ServerSetting.SingleOrDefaultAsync(x => x.Key == key);
+        return _context.ServerSetting.SingleOrDefaultAsync(x => x.Key == key)!;
     }
 
     public async Task<IEnumerable<ServerSetting>> GetSettingsAsync()
